@@ -7,6 +7,7 @@ import (
 
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"kafka-go-service/models"
+	"kafka-go-service/database"
 )
 
 var Producer *kafka.Producer
@@ -63,7 +64,8 @@ func RunConsumer() {
 	go consumeMessages()
 }
 
-// run the consumer in an infinite loop, trying to consume the latest message
+// run the consumer in an infinite loop
+// consume the latest message and update its processed status
 func consumeMessages() {
 	for {
 		msg, err := Consumer.ReadMessage(-1)
@@ -73,14 +75,21 @@ func consumeMessages() {
 		}
 		
 		var receivedMsg models.Message
-
+		// parse json
 		err = json.Unmarshal(msg.Value, &receivedMsg)
 		if err != nil {
 			log.Printf("Error unmarshaling message: %v\n", err)
 			continue
 		}
 
-		log.Printf("Received message: %+v\n", receivedMsg)
-	}
+		log.Printf("Message %v received: %v\n", receivedMsg.ID, receivedMsg.Content)
+		// mark the messages as processed
+		err = database.UpdateMessageStatus(receivedMsg.ID)
+		if err != nil {
+			log.Printf("Error updating message status: %v\n", err)
+			continue
+		}
 
+		log.Printf("Message %v status: processed\n", receivedMsg.ID)
+	}
 }
