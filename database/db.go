@@ -1,11 +1,13 @@
 package database
 
 import (
-	"os"
-	"log"
 	"database/sql"
 	"fmt"
 	"kafka-go-service/models"
+	"log"
+	"os"
+	"strconv"
+
 	_ "github.com/lib/pq"
 )
 
@@ -15,14 +17,19 @@ func InitDB() {
 	var err error
 
 	dbHost := os.Getenv("DB_HOST")
-	dbPort := os.Getenv("DB_PORT")
+	dbPortStr := os.Getenv("DB_PORT")
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
+	sslMode := os.Getenv("DB_SSL_MODE")
 
-	connStr := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-	dbHost, dbPort, dbUser, dbPassword, dbName)
-
+	dbPort, err := strconv.Atoi(dbPortStr)
+	if err != nil {
+		log.Fatalf("Invalid port number: %v\n", err)
+	}
+		
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=%s", dbHost, dbPort, dbUser, dbPassword, dbName, sslMode)
+	
 	DB, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
