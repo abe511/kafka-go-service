@@ -1,0 +1,24 @@
+services:
+  kafka-go-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: kafka-go-service
+    image: kafka-go-service:latest
+    ports:
+      - "8080:8080"
+    environment:
+      ENV: local
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: postgres
+      DB_SSL_MODE: require
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_GROUP_ID: test_group
+      KAFKA_TOPIC: test_topic
+      KAFKA_CA_PEM: ca.pem
+      KAFKA_SERVICE_CERT: service.cert
+      KAFKA_SERVICE_KEY: service.key
+    restart: always
