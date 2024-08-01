@@ -12,25 +12,58 @@ import (
 
 var Producer *kafka.Producer
 var Consumer *kafka.Consumer
+var KafkaTopic string = os.Getenv("KAFKA_TOPIC")
 
 func InitKafka() {
+
+	var configProducer kafka.ConfigMap
+	var configConsumer kafka.ConfigMap
+
+	brokers := os.Getenv("KAFKA_BROKERS")
+	groupID := os.Getenv("KAFKA_GROUP_ID")
+
+	if os.Getenv("ENV") == "global" {
+		caPem := os.Getenv("KAFKA_CA_PEM")
+		serviceCert := os.Getenv("KAFKA_SERVICE_CERT")
+		serviceKey := os.Getenv("KAFKA_SERVICE_KEY")
+		
+		configProducer = kafka.ConfigMap{
+			"bootstrap.servers": brokers,
+			"security.protocol": "SSL",
+			"ssl.ca.location": caPem,
+			"ssl.certificate.location": serviceCert,
+			"ssl.key.location": serviceKey,
+		}
+		configConsumer = kafka.ConfigMap{
+			"bootstrap.servers": brokers,
+			"security.protocol": "SSL",
+			"ssl.ca.location": caPem,
+			"ssl.certificate.location": serviceCert,
+			"ssl.key.location": serviceKey,
+			"group.id": groupID,
+			"auto.offset.reset": "earliest",
+		}
+	} else {
+		configProducer = kafka.ConfigMap{
+				"bootstrap.servers": brokers,
+			}
+		configConsumer = kafka.ConfigMap{
+			"bootstrap.servers": brokers,
+			"group.id": "test_group",
+			"auto.offset.reset": "earliest",
+		}
+	}
+
 	var err error
 
 	// initialize a producer
-	Producer, err = kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": os.Getenv("KAFKA_BROKERS"),
-	})
-
+	Producer, err = kafka.NewProducer(&configProducer)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// initialize a consumer
-	Consumer, err = kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers": os.Getenv("KAFKA_BROKERS"),
-		"group.id": "test_group",
-		"auto.offset.reset": "earliest",
-	})
+	Consumer, err = kafka.NewConsumer(&configConsumer)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,11 +71,10 @@ func InitKafka() {
 
 // produce a message and add it to the queue
 func SendToKafka(msg *models.Message) error {
-	topic := "test_topic"
 	msgBytes, _ := json.Marshal(msg)
 
 	err := Producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		TopicPartition: kafka.TopicPartition{Topic: &KafkaTopic, Partition: kafka.PartitionAny},
 		Value: msgBytes,
 	}, nil)
 	if err != nil {
@@ -55,8 +87,7 @@ func SendToKafka(msg *models.Message) error {
 
 // subscribe to a topic and run the consumer in a separate goroutine
 func RunConsumer() {
-	topic := "test_topic"
-	err := Consumer.SubscribeTopics([]string{topic}, nil)
+	err := Consumer.SubscribeTopics([]string{KafkaTopic}, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
