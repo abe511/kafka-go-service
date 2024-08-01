@@ -6,12 +6,13 @@ import (
 	"kafka-go-service/handlers"
 	"kafka-go-service/kafkaservice"
 	"kafka-go-service/database"
+
 )
 
 
 func main() {
 	database.InitDB()
-
+	
 	kafkaservice.InitKafka()
 	
 	kafkaservice.RunConsumer()
