@@ -4,10 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"os"
-
-	"github.com/confluentinc/confluent-kafka-go/kafka"
-	"kafka-go-service/models"
 	"kafka-go-service/database"
+	"kafka-go-service/models"
+	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
 var Producer *kafka.Producer
@@ -26,7 +25,7 @@ func InitKafka() {
 		caPem := os.Getenv("KAFKA_CA_PEM")
 		serviceCert := os.Getenv("KAFKA_SERVICE_CERT")
 		serviceKey := os.Getenv("KAFKA_SERVICE_KEY")
-		
+
 		configProducer = kafka.ConfigMap{
 			"bootstrap.servers": brokers,
 			"security.protocol": "SSL",
@@ -83,7 +82,6 @@ func SendToKafka(msg *models.Message) error {
 
 	return err
 }
-
 
 // subscribe to a topic and run the consumer in a separate goroutine
 func RunConsumer() {
